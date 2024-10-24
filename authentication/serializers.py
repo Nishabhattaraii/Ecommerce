@@ -1,25 +1,25 @@
-from django.contrib.auth.models import User
-from authentication.models import Profile
+from authentication.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
+from .models import Customer, Seller,Store
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    user_type = serializers.ChoiceField(choices=Profile.USER_TYPE_CHOICES, write_only=True)
+class CustomerRegisterSerializer(serializers.ModelSerializer):
+
+    email = serializers.EmailField()
+    password = serializers.CharField(required=True)
 
     class Meta:
-        model = User
-        fields = ('username', 'password', 'user_type')
+        model = Customer
+        fields = ['email', 'password','full_name', 'address', 'phone_number']
 
-    def create(self, validated_data):
-        user_type = validated_data.pop('user_type')
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password']
-        )
-        Profile.objects.create(user=user, user_type=user_type)
-        return user
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already registered.")
+        return value
+    
     
     def validate_password(self, password):
         if not re.search(r"[A-Z]", password):
@@ -38,12 +38,48 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"message": ["Password must contain at least one special character"]}
             )
+        return password
+    
+    def create(self, validated_data):
+        email = validated_data.pop("email")
+        password = validated_data.pop("password")
+        user = User.objects.create_user(email=email, password=password, username=email)
+        customer = Customer.objects.create(user=user, **validated_data)
+        return customer
+
+class StoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Store
+        fields = ['name', 'address']
+
+class SellerRegisterSerializer(serializers.ModelSerializer):
+
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    class Meta:
+        model = Seller
+        fields = ['email','password', 'full_name', 'store']
+
+    def validate_username(self,value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("This username already exists")
+        return value
+        
+
+    def create(self, validated_data):
+        email = validated_data.pop('email')
+        password = validated_data.pop('password')
+        store = validated_data.pop('store')
+        user = User.objects.create_user(email=email, password=password,username=email)
+        seller = Seller.objects.create(user=user, store=store, **validated_data)
+        return seller   
+
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    email = serializers.EmailField()
     password = serializers.CharField()
-
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)

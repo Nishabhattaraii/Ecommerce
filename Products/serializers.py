@@ -6,8 +6,3 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
 
-    # def validate(self, attrs):
-    #     if not user.role == enums.Class.field :
-    #         PermissionError
-
-    #     return attrs

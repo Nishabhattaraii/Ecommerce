@@ -11,10 +11,16 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
 
+env = environ.Env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', default=True)
+if READ_DOT_ENV_FILE:
+    env.read_env(str(BASE_DIR/ ".env"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -43,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -79,12 +86,23 @@ WSGI_APPLICATION = 'Ecommerce.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+       "ENGINE": env("ENGINE", default=""),
+        "NAME": env("NAME",default=""),
+        "USER": env("USER",default=""),
+        "PASSWORD": env("PASSWORD",default=""),
+        "HOST": env("HOST",default=""),
+        "PORT": env("PORT",default="")
     }
 }
+
 
 
 # Password validation
@@ -109,8 +127,17 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+        
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Your Project API',
+    'DESCRIPTION': 'Your project description',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -122,6 +149,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+AUTH_USER_MODEL = "authentication.User"
 
 
 # Static files (CSS, JavaScript, Images)
