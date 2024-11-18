@@ -3,11 +3,10 @@ from authentication.models import User
 from Products.models import Product
 
 class Cart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="cart_user")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Cart of {self.user.username}"
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')

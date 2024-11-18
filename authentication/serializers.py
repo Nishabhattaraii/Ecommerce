@@ -3,6 +3,10 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
 from .models import Customer, Seller,Store
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode
+
 
 
 class CustomerRegisterSerializer(serializers.ModelSerializer):
@@ -52,6 +56,8 @@ class StoreSerializer(serializers.ModelSerializer):
         model = Store
         fields = ['name', 'address']
 
+
+
 class SellerRegisterSerializer(serializers.ModelSerializer):
 
     email = serializers.EmailField()
@@ -88,3 +94,37 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        try:
+            uid = urlsafe_base64_decode(data['uid']).decode()
+            user = User.objects.get(pk=uid)
+        except (User.DoesNotExist, ValueError, TypeError):
+            raise serializers.ValidationError("Invalid UID or token.")
+
+        if not PasswordResetTokenGenerator().check_token(user, data['token']):
+            raise serializers.ValidationError("Invalid token or expired.")
+
+        data['user'] = user
+        return data
+
+    def save(self, **kwargs):
+        password = self.validated_data['new_password']
+        user = self.validated_data['user']
+        user.set_password(password)
+        user.save()
+        return user
+    
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

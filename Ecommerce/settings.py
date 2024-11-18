@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import environ
+import os
 
 env = environ.Env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -51,6 +52,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
+    'django_filters',
+    'khalti'
 ]
 
 MIDDLEWARE = [
@@ -84,15 +87,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Ecommerce.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
        "ENGINE": env("ENGINE", default=""),
@@ -104,6 +99,8 @@ DATABASES = {
     }
 }
 
+KHALTI_SECRET_KEY = 'd7b7778d92d94b529a0d64e462a42cc8'
+KHALTI_PUBLIC_KEY = 'c8bd2387c26e4ede8514472ad5742a83'
 
 
 # Password validation
@@ -131,13 +128,19 @@ REST_FRAMEWORK = {
         
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 
 }
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your Project API',
-    'DESCRIPTION': 'Your project description',
+    'TITLE': 'Ecommerce API',
+    'DESCRIPTION': 'A multivendor Ecommerce website',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": False,
+    },
     # OTHER SETTINGS
 }
 # Internationalization
@@ -166,3 +169,20 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MEDIA_URL ='/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media') 
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0' 
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+FRONTEND_URL= 'http://localhost:5173/'
+
+
+# Email backend
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com' 
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")  
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD") 
+

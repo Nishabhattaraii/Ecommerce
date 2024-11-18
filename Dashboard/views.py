@@ -8,6 +8,7 @@ from Products.models import Product
 from django.db.models.functions import Coalesce, Cast
 
 class DashboardView(APIView):
+
     def get(self, request):
         dispatched_orders = Order.objects.count()
         
@@ -26,8 +27,6 @@ class DashboardView(APIView):
         data = {
             "orders_dispatched": dispatched_orders,
             "top_selling_products": list(top_selling_products),
-            # "total_sales": total_sales,
-            # "store_with_most_sales": store_name,
             "total_products_added_to_cart": total_cart_products,
         }
 

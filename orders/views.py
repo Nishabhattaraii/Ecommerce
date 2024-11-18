@@ -23,24 +23,8 @@ class CartView(APIView):
         serializer = CartSerializer(cart)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
-class CartItemView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    @extend_schema(
-            request=CartItemSerializer,
-            description='Cart-item'
-    )
-
-    def get(self, request):
-        # Retrieve the cart items for the logged-in user
-        cart = Cart.objects.filter(user=request.user).first()
-        if not cart:
-            return Response({"error": "Cart is empty."}, status=status.HTTP_404_NOT_FOUND)
-        
-        items = CartItem.objects.filter(cart=cart)
-        serializer = CartItemSerializer(items, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+class CartPostView(APIView):
+    permission_classes=[permissions.IsAuthenticated]
     @extend_schema(
             request=CartItemSerializer,
             description='add items to cart',
@@ -53,32 +37,44 @@ class CartItemView(APIView):
             serializer.save(cart=cart)  # Use validated data
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class CartItemView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+   
 
     @extend_schema(
             request=CartItemSerializer,
             description="update an existing item in cart",
             responses=CartItemSerializer
     )
-    def put(self, request, item_id):
-        # Update an existing cart item (e.g., change quantity)
-        cart = get_object_or_404(Cart, user=request.user)
-        item = get_object_or_404(CartItem, cart=cart, id=item_id)
-        serializer = CartItemSerializer(item, data=request.data, partial=True)
+    def put(self, request, id):
+        cart = request.user.cart_user
+        cart_item = CartItem.objects.filter(
+            cart = cart,
+            product__id = id
+        ).first()
+        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response("Updated Successfully", status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
     @extend_schema(
             description="Remove an existing cart Item",
             responses=None
     )
-    def delete(self, request, item_id):
-        # Remove an item from the cart
-        cart = get_object_or_404(Cart, user=request.user)
-        item = get_object_or_404(CartItem, cart=cart, id=item_id)
-        item.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request, id):
+        cart = request.user.cart_user
+        cart_item = CartItem.objects.filter(
+            cart = cart,
+            product__id = id
+        ).first()
+        cart_item.delete()
+        return Response(status=status.HTTP_200_OK)
+
 
 class OrderCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -115,7 +111,6 @@ class OrderCreateView(APIView):
                     quantity=item.quantity
                 )
 
-            # Clear the cart after creating the order
             cart.delete()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
