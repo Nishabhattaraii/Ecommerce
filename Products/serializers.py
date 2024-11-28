@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from Products.models import Product, Comment#TODO : whole path
+from Products.models import Product, Comment
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,7 +18,6 @@ class ProductSerializer(serializers.ModelSerializer):
         seller = user.seller_user
         validated_data["seller"] = seller
         
-        # Create and return the new Product instance
         return Product.objects.create(**validated_data)
 
 

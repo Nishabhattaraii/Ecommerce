@@ -1,21 +1,32 @@
 from urllib import request
 from rest_framework import serializers
 from .models import Cart, CartItem, Order, OrderItem
+from rest_framework.exceptions import ValidationError
+
 
 class CartItemSerializer(serializers.ModelSerializer):
-    # discounted_price = serializers.SerializerMethodField()
+    item_price = serializers.SerializerMethodField()
     # total_price = serializers.SerializerMethodField()
     class Meta:
         model = CartItem
-        fields = ["quantity"]
-        # fields = ['product', 'quantity', 'total_price', 'discounted_price']
+        # fields = ["quantity"]
+        fields = ['product', 'quantity','item_price']
 
+    def get_item_price(self, obj):
+        """Return the discounted price of the CartItem"""
+        return obj.item_price()
+    
+    def validate(self, data):
+        product = data.get('product')
+        quantity = data.get('quantity')
 
-    # def get_total_price(self, obj):
-    #     return obj.quantity * obj.product.discounted_price
+        if not product:
+            raise ValidationError("Product does not exist.")
 
-    # def get_discounted_price(self, obj):
-    #     return obj.product.discounted_price
+        if product.stock < quantity:
+            raise ValidationError(f"Not enough stock available. Only {product.stock} items left.")
+
+        return data
     
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
@@ -30,6 +41,16 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = "__all__"
         # fields = [ 'product', 'quantity']
+
+    def validate(self, data):
+        product = data.get('product')
+        quantity = data.get('quantity')
+
+        if not product:
+            raise ValidationError("Product does not exist.")
+        if product.stock < quantity:
+            raise ValidationError(f"Not enough stock available. Only {product.stock} items left.")
+        return data
 
     
 class OrderSerializer(serializers.ModelSerializer):

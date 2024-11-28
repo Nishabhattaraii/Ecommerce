@@ -2,8 +2,8 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .models import Cart, Order, Product, CartItem,OrderItem
-from .serializers import CartSerializer, OrderSerializer, CartItemSerializer, OrderItemSerializer
+from orders.models import Cart, Order, Product, CartItem,OrderItem
+from orders.serializers import CartSerializer, OrderSerializer, CartItemSerializer, OrderItemSerializer
 from rest_framework.permissions import IsAdminUser
 from drf_spectacular.utils import extend_schema
 
