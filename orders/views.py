@@ -2,8 +2,8 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from orders.models import Cart, Order, Product, CartItem,OrderItem
-from orders.serializers import CartSerializer, OrderSerializer, CartItemSerializer, OrderItemSerializer
+from orders.models import Cart, Order,CartItem,OrderItem
+from orders.serializers import CartSerializer, OrderSerializer, CartItemSerializer
 from rest_framework.permissions import IsAdminUser
 from drf_spectacular.utils import extend_schema
 
@@ -34,7 +34,7 @@ class CartPostView(APIView):
         cart, created = Cart.objects.get_or_create(user=request.user)
         serializer = CartItemSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(cart=cart)  # Use validated data
+            serializer.save(cart=cart) 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -80,8 +80,7 @@ class OrderCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
-        request=OrderSerializer,
-        description='Create order',
+        description='Create order from cart',
         responses=OrderSerializer
     )
     def post(self, request):
@@ -90,29 +89,39 @@ class OrderCreateView(APIView):
         except Cart.DoesNotExist:
             return Response({"error": "Cart does not exist."}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = OrderSerializer(data=request.data)
-        if serializer.is_valid():
-            order = serializer.save(user=request.user)
+        order = Order.objects.create(user=request.user)
 
-            for item in cart.items.all():
-                product = item.product
-                
-                if product.stock < item.quantity:
-                    return Response({"error": f"Not enough stock for {product.name}."}, status=status.HTTP_400_BAD_REQUEST)
-                
-                print(f"Deducting {item.quantity} from {product.name} (current stock: {product.stock})")
-                product.stock -= item.quantity
-                product.save()
-                print(f"New stock for {product.name}: {product.stock}")
+        for item in cart.items.all():
+            product = item.product
+            if product.stock < item.quantity:
+                return Response({"error": f"Not enough stock for {product.name}."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            product.stock -= item.quantity
+            product.save()
+            OrderItem.objects.create(order=order, product=product, quantity=item.quantity)
 
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=item.quantity
-                )
+        cart.items.all().delete() 
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-            cart.delete()
+class OrderStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    @extend_schema(
+        description="Update order status",
+        request=OrderSerializer,
+        responses=OrderSerializer
+    )
+    def patch(self, request, id):
+        order = get_object_or_404(Order, id=id, user=request.user)
+        if request.user != order.user and not request.user.is_staff:
+            return Response({"error": "You do not have permission to update this order."}, status=status.HTTP_403_FORBIDDEN)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        status = request.data.get('status')
+        if status not in dict(Order.ORDER_STATUS_CHOICES):
+            return Response({"error": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        order.status = status
+        order.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)

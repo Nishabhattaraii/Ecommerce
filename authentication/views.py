@@ -1,11 +1,10 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login
 from authentication.models import Seller
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CustomerRegisterSerializer, PasswordChangeSerializer, PasswordResetConfirmSerializer, SellerRegisterSerializer, StoreSerializer
-from .serializers import get_tokens_for_user
+from authentication.serializers import CustomerRegisterSerializer, PasswordChangeSerializer, PasswordResetConfirmSerializer, SellerRegisterSerializer, StoreSerializer
+from authentication.serializers import get_tokens_for_user
 from authentication.serializers import PasswordResetRequestSerializer,LoginSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken

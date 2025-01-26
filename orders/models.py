@@ -6,6 +6,8 @@ class Cart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="cart_user")
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"Cart of {self.user.username}"
 
 
 class CartItem(models.Model):
@@ -27,18 +29,30 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
 
     def total_price(self):
-        return self.quantity * self.product.discounted_price
+        return self.quantity * self.product.discounted_price()
 
 
 class Order(models.Model):
+    ORDER_STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Processing', 'Processing'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled'),
+    ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20, 
+        choices=ORDER_STATUS_CHOICES, 
+        default='Pending'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def total_amount(self):
         return sum(item.total_price() for item in self.order_items.all())
 
     def __str__(self):
-        return f"Order {self.id} by {self.user.username}"
+        return f"Order {self.id} by {self.user.username} - Status: {self.status}"
 
 
     

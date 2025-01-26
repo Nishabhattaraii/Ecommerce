@@ -5,4 +5,3 @@ from authentication.models import User, Seller
 
 admin.site.register(Product)
 admin.site.register(User)
-admin.site.register(Seller)

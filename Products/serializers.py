@@ -2,6 +2,7 @@ from rest_framework import serializers
 from Products.models import Product, Comment
 
 class ProductSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
     class Meta:
         model = Product
         fields = [
