@@ -90,14 +90,15 @@ WSGI_APPLICATION = 'Ecommerce.wsgi.application'
 
 
 DATABASES = {
-    'default': {
-       "ENGINE": env("ENGINE", default=""),
-        "NAME": env("NAME",default=""),
-        "USER": env("USER",default=""),
-        "PASSWORD": env("PASSWORD",default=""),
-        "HOST": env("HOST",default=""),
-        "PORT": env("PORT",default="")
-    }
+
+    'default': env.db("DATABASE_URL")
+    #    "ENGINE": env("ENGINE", default=""),
+    #     "NAME": env("NAME",default=""),
+    #     "USER": env("USER",default=""),
+    #     "PASSWORD": env("PASSWORD",default=""),
+    #     "HOST": env("HOST",default=""),
+    #     "PORT": env("PORT",default="")
+
 }
 
 

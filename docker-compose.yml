@@ -1,0 +1,28 @@
+services:
+  postgres:
+    container_name: ecommerce_db
+    image: postgres:14.13
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  django-web:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: django-docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - media_files:/usr/src/app/media
+
+volumes:
+  postgres_data: {}
+  media_files: {}
